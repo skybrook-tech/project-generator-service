@@ -1,12 +1,9 @@
-import dotenv from "dotenv";
+import config from "../_config";
 import setupServerDefaults from "./core/utils/setup-server-defaults";
 
+const { DOMAIN, PORT } = config;
+
 const app = setupServerDefaults();
-
-dotenv.config();
-
-const DOMAIN = process.env.DOMAIN;
-const PORT = process.env.PORT;
 
 app.listen(PORT, () => {
   console.log(`Server ready at http://${DOMAIN}:${PORT}`);

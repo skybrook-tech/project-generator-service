@@ -1,8 +1,11 @@
+require("dotenv").config();
+
+const DOMAIN = process.env.DOMAIN;
+let PORT = process.env.PORT;
+
 const config = {
-  domain: {
-    // development: "mockend.lvh.me",
-    // production: "mockend.skybrook.tech"
-  }
+  DOMAIN,
+  PORT
 };
 
 module.exports = config;
