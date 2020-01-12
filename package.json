@@ -18,7 +18,9 @@
     "g": "./scripts/generations.sh",
     "cov-report": "open ./coverage/lcov-report/index.html",
     "submodule-update": "git submodule update --recursive",
-    "submodule-init": "git submodule update --init --recursive"
+    "submodule-init": "git submodule update --init --recursive",
+    "db-init": "yarn sql db:create && NODE_ENV=test yarn sql db:create",
+    "service-init": "yarn submodule-init && yarn db-init"
   },
   "keywords": [],
   "author": "",
