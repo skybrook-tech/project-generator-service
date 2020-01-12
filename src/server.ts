@@ -24,22 +24,26 @@ projectCache.on("set", (key, value) => {
   console.log(key, "added to cache");
 });
 
+const getCachedProject = (subDomain: string) => {
+  const projectCacheTime = 5;
+
+  if (!projectCache.get(subDomain)) {
+    const db = new Sequelize("postgres://postgres@localhost:54321/mockend_development");
+    const project = { db, app: "bar" };
+
+    projectCache.set(subDomain, project, projectCacheTime);
+  }
+
+  projectCache.ttl(subDomain, projectCacheTime);
+
+  return projectCache.get(subDomain);
+};
+
 app.use(
   vhost(`${DOMAIN}`, async (req: Request, res: Response, next: NextFunction) => {
     const subDomain = req.vhost.host.split(".")[0];
 
-    const projectCacheTime = 5;
-
-    if (!projectCache.get(subDomain)) {
-      const db = new Sequelize("postgres://postgres@localhost:54321/mockend_development");
-      const project = { db, app: "bar" };
-
-      projectCache.set(subDomain, project, projectCacheTime);
-    }
-
-    const cachedProject = projectCache.get(subDomain);
-
-    projectCache.ttl(subDomain, projectCacheTime);
+    const cachedProject = getCachedProject(subDomain);
 
     res.json({ subDomain });
   })
