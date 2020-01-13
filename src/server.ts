@@ -2,52 +2,27 @@ import config from "../_config";
 import setupServerDefaults from "./core/utils/setup-server-defaults";
 import vhost from "vhost";
 import { Request, Response, NextFunction } from "express";
-import NodeCache from "node-cache";
-import { Sequelize } from "sequelize";
-
-// TODO: increase checkPeriod time
-const projectCache = new NodeCache({ checkperiod: 2 });
+import getCachedProject from "./project-cache";
 
 const { DOMAIN, PORT } = config;
 
-const app = setupServerDefaults();
+const vhostMiddlware = vhost(
+  `${DOMAIN}`,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const subDomain = req.vhost.host.split(".")[0];
 
-projectCache.on("del", async (key, { db }) => {
-  console.log(key, "removed from cache");
+      const cachedProject = await getCachedProject(subDomain);
 
-  await db.close();
-
-  console.log(key, "db closed");
-});
-
-projectCache.on("set", (key, value) => {
-  console.log(key, "added to cache");
-});
-
-const getCachedProject = (subDomain: string) => {
-  const projectCacheTime = 5;
-
-  if (!projectCache.get(subDomain)) {
-    const db = new Sequelize("postgres://postgres@localhost:54321/mockend_development");
-    const project = { db, app: "bar" };
-
-    projectCache.set(subDomain, project, projectCacheTime);
+      // @ts-ignore
+      return cachedProject.app(req, res, next);
+    } catch (error) {
+      next(error);
+    }
   }
-
-  projectCache.ttl(subDomain, projectCacheTime);
-
-  return projectCache.get(subDomain);
-};
-
-app.use(
-  vhost(`${DOMAIN}`, async (req: Request, res: Response, next: NextFunction) => {
-    const subDomain = req.vhost.host.split(".")[0];
-
-    const cachedProject = getCachedProject(subDomain);
-
-    res.json({ subDomain });
-  })
 );
+
+const app = setupServerDefaults({ globalMiddleware: [vhostMiddlware] });
 
 app.listen(PORT, () => {
   console.log(`Server ready at http://${DOMAIN}:${PORT}`);
